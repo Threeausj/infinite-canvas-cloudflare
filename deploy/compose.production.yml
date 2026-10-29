@@ -1,0 +1,31 @@
+services:
+  app:
+    image: ${CANVAS_IMAGE:?Set CANVAS_IMAGE to the built release image}
+    depends_on:
+      jobs:
+        condition: service_healthy
+    ports:
+      - "30006:3000"
+    environment:
+      CANVAS_API_UPSTREAM: ${CANVAS_API_UPSTREAM:?Set CANVAS_API_UPSTREAM to your private API origin}
+      CANVAS_JOBS_UPSTREAM: http://jobs:8081
+      CANVAS_FRAME_ANCESTORS: ${CANVAS_FRAME_ANCESTORS:-}
+      ANALYTICS_GA4_ID: ""
+      ANALYTICS_BAIDU_ID: ""
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/healthz"]
+  jobs:
+    image: ${CANVAS_JOBS_IMAGE:?Set CANVAS_JOBS_IMAGE to the built job service image}
+    environment:
+      CANVAS_API_UPSTREAM: ${CANVAS_API_UPSTREAM:?Set CANVAS_API_UPSTREAM to your private API origin}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8081/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

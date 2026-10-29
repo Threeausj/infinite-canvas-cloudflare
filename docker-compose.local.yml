@@ -1,0 +1,25 @@
+services:
+  app:
+    image: infinite-canvas:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - jobs
+    environment:
+      CANVAS_JOBS_UPSTREAM: http://jobs:8081
+      CANVAS_API_UPSTREAM: ${CANVAS_API_UPSTREAM:?Set CANVAS_API_UPSTREAM to your private API origin}
+      CANVAS_FRAME_ANCESTORS: ${CANVAS_FRAME_ANCESTORS:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+  jobs:
+    build:
+      context: ./image-jobs
+    environment:
+      CANVAS_API_UPSTREAM: ${CANVAS_API_UPSTREAM:?Set CANVAS_API_UPSTREAM to your private API origin}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
